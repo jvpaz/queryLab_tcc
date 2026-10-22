@@ -257,6 +257,14 @@ button:disabled {
   font-size: 9px;
   width: 10px;
 }
+
+.column-foreign 
+{
+  color: var(--blue);
+  font-size: 9px;
+  width: 10px;
+}
+
 .column-type {
   color: #8b93a2;
 }

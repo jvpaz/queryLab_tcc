@@ -169,20 +169,28 @@ export function QueryLab() {
         })),
       );
 
+      const previousForeignKeys = edges.map((edge) => ({
+        id: edge.id,
+        tableOrigin: edge.source,
+        table: edge.target,
+      }));
+
       const updatedForeignKeys: ForeignKeyDefinition[] = [];
       for (const table of updatedTables) {
         const foreignKeys = await getForeignKeys(table.name);
+
         updatedForeignKeys.push(...foreignKeys);
       }
 
       console.log("Updated Foreign Keys:", updatedForeignKeys);
 
       setEdges(updatedForeignKeys.map((fk, index) => ({
-        id: String(index),
+        id: fk.id,
         source: fk.tableOrigin,
         target: fk.table,
         type: "smoothstep",
         style: { stroke: "#596373" },
+        labelStyle: { fill: "#a5adba", fontSize: 10 },
       })));
 
       console.log("Updated Edges:", edges);

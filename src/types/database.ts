@@ -2,6 +2,7 @@ export type ColumnDefinition = {
   name: string;
   type: string;
   primaryKey?: boolean;
+  foreignKey?: boolean;
   nullable?: boolean;
 };
 export type TableDefinition = {

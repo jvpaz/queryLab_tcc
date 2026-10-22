@@ -55,28 +55,37 @@ export async function getSchema(): Promise<TableDefinition[]> {
     "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name;",
   );
 
-  return tables.flatMap((result) =>
-    result.values.map((row, index) => {
-      const name = String(row[0]);
+  return Promise.all(
+    tables.flatMap((result) =>
+      result.values.map(async (row, index) => {
+        const name = String(row[0]);
 
-      const tableName = `"${name.replaceAll('"', '""')}"`;
-      const columnResults = db.exec(`PRAGMA table_info(${tableName});`);
-      const columns = (columnResults[0]?.values ?? []).map((column) => ({
-        name: String(column[1]),
-        type: String(column[2] ?? ""),
-        nullable: Number(column[3]) === 0,
-        primaryKey: Number(column[5]) > 0,
-      }));
-      const countResults = db.exec(`SELECT COUNT(*) FROM ${tableName};`);
+        const tableName = `"${name.replaceAll('"', '""')}"`;
+        const columnResults = db.exec(`PRAGMA table_info(${tableName});`);
 
-      return {
-        id: name,
-        name,
-        columns,
-        position: { x: 100 + (index % 3) * 280, y: 100 + Math.floor(index / 3) * 220 },
-        rowCount: Number(countResults[0]?.values[0]?.[0] ?? 0),
-      };
-    }),
+        const columns = (columnResults[0]?.values ?? []).map(async (column) => ({
+          name: String(column[1]),
+          type: String(column[2] ?? ""),
+          nullable: Number(column[3]) === 0,
+          primaryKey: Number(column[5]) > 0,
+          foreignKey: await isForeignKey(name, String(column[1])),
+        }));
+
+        const countResults = db.exec(`SELECT COUNT(*) FROM ${tableName};`);
+        const resolvedColumns = await Promise.all(columns);
+
+        return {
+          id: name,
+          name,
+          columns: resolvedColumns,
+          position: {
+            x: 100 + (index % 3) * 280,
+            y: 100 + Math.floor(index / 3) * 220,
+          },
+          rowCount: Number(countResults[0]?.values[0]?.[0] ?? 0),
+        };
+      }),
+    ),
   );
 }
 
@@ -86,12 +95,17 @@ export async function getForeignKeys(tableName: string): Promise<ForeignKeyDefin
   const results = db.exec(`PRAGMA foreign_key_list(${tableNameEscaped});`);
 
   return (results[0]?.values ?? []).map((row, index) => ({
-    id: String(index),
+    id:`${tableName}.${String(row[3])}->${String(row[2])}.${String(row[4])}`,
     tableOrigin: String(tableName),
     table: String(row[2]),
     from: String(row[3]),
     to: String(row[4]),
   }));
+}
+
+export async function isForeignKey(tableName: string, columnName: string): Promise<boolean> {
+  const foreignKeys = await getForeignKeys(tableName);
+  return foreignKeys.some((fk) => fk.from === columnName);
 }
 
 export async function executeBatch(sql: string) {

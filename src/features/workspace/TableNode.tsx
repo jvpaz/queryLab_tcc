@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { KeyRound, Table2 } from "lucide-react";
+import { KeyRound, Table2, Link } from "lucide-react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import type { TableDefinition } from "@/types/database";
 
@@ -27,9 +27,19 @@ function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
       {data.columns.map((column) => (
         <div className="column" key={column.name}>
           <span className="column-left">
-            <span className="column-key">
-              {column.primaryKey ? <KeyRound size={10} /> : ""}
-            </span>
+            
+              {column.primaryKey ? 
+                <span className="column-key">
+              <KeyRound size={10} /> 
+                </span>
+              : ""} 
+                
+              {column.foreignKey ? 
+                <span className="column-foreign">
+              <Link size={10} /> 
+                </span>
+              : ""}
+            
             {column.name}
           </span>
           <span className="column-type">{column.type}</span>
