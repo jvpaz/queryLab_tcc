@@ -32,6 +32,7 @@ import TableNode, { type TableFlowNode } from "./TableNode";
 import { ForeignKeyDefinition } from "@/types/database";
 
 const nodeTypes = { table: TableNode };
+const seedDatabase: boolean = false;
 const initialSql =
   "SELECT\n  c.name AS cliente,\n  COUNT(o.id) AS total_pedidos,\n  ROUND(SUM(o.total), 2) AS valor_total\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY valor_total DESC;";
 const initialEdges: Edge[] = [
@@ -76,7 +77,7 @@ export function QueryLab() {
   const setResult = useWorkspaceStore((state) => state.setResult);
   const setQueryError = useWorkspaceStore((state) => state.setQueryError);
   const [nodes, setNodes, onNodesChange] = useNodesState<TableFlowNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(seedDatabase ? initialEdges : []);
   const [notice, setNotice] = useState("");
   const [ready, setReady] = useState(false);
   const [rowCount, setRowCount] = useState(20);
@@ -88,11 +89,16 @@ export function QueryLab() {
     async function initialize() {
       try {
         await getDatabase();
-        await import("@/lib/db/engine").then(({ executeBatch }) =>
-          executeBatch(seedSql),
-        );
+        if (seedDatabase) {
+          await import("@/lib/db/engine").then(({ executeBatch }) =>
+            executeBatch(seedSql),
+          );
+        }
         if (!active) return;
+
+        if(seedDatabase) {
         setTables(sampleTables);
+
         setNodes(
           sampleTables.map((table) => ({
             id: table.id,
@@ -101,7 +107,9 @@ export function QueryLab() {
             data: table,
           })),
         );
-        setSql(initialSql);
+        
+        setSql(seedDatabase ? initialSql : "");
+      }
         setReady(true);
       } catch (error) {
         setQueryError(

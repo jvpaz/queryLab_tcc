@@ -17,7 +17,7 @@ type WorkspaceState = {
 };
 
 export const useWorkspaceStore = create<WorkspaceState>((set) => ({
-  sql: "SELECT * FROM customers LIMIT 10;",
+  sql: "",
   tables: [],
   selectedTableId: null,
   result: null,

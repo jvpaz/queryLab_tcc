@@ -1,24 +1,25 @@
 import type { Database, SqlJsStatic } from "sql.js";
 import type { ForeignKeyDefinition, TableDefinition } from "@/types/database";
+import initSqlJs from "sql.js";
+
+//TODO - Adicionar função para trazer schema de banco de dados já existente no indexedDB, incluindo tabelas, colunas e chaves estrangeiras.
 
 let sqlPromise: Promise<SqlJsStatic> | undefined;
 let database: Database | undefined;
 
+// Função para carregar o módulo SQL.js e inicializar o banco de dados SQLite em memória, seguindo exemplo da documentação.
 async function getSql(): Promise<SqlJsStatic> {
   if (!sqlPromise) {
     sqlPromise = (async () => {
-      // Fetch the WASM explicitly: relying on Emscripten's streaming fetch can
-      // fail behind Next dev proxies, base paths, or static hosting rewrites.
+
       const wasmUrl = new URL("sql-wasm.wasm", document.baseURI);
       const response = await fetch(wasmUrl);
       if (!response.ok) {
         throw new Error(`Não foi possível carregar o SQLite WebAssembly (${response.status} ${response.statusText}) em ${wasmUrl.pathname}.`);
       }
-      const wasmBinary = new Uint8Array(await response.arrayBuffer());
-      const { default: initSqlJs } = await import("sql.js");
-      return initSqlJs({ wasmBinary: wasmBinary.buffer as ArrayBuffer, locateFile: () => wasmUrl.href });
+      return initSqlJs({locateFile: () => wasmUrl.href });
     })().catch((error: unknown) => {
-      // Allow retry after correcting a transient asset/network issue.
+
       sqlPromise = undefined;
       throw error;
     });
