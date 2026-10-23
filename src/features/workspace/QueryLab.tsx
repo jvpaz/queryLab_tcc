@@ -212,7 +212,7 @@ export function QueryLab() {
         tables,
         updatedAt: Date.now(),
       });
-      notify("Workspace salvo neste navegador.");
+      notify("Salvamento de workspace ainda em desenvolvimento.");
     } catch {
       notify("Não foi possível salvar no navegador.");
     }
@@ -325,7 +325,7 @@ export function QueryLab() {
             className="btn btn-ghost"
             onClick={() =>
               notify(
-                "Importação de schema: ponto de extensão para implementação.",
+                "Importação de schema ainda em desenvolvimento!",
               )
             }
           >
@@ -334,7 +334,7 @@ export function QueryLab() {
           </button>
           <button
             className="btn btn-ghost"
-            onClick={() => notify("Configurações do projeto em breve.")}
+            onClick={() => notify("Configurações ainda em desenvolvimento!")}
           >
             <Settings2 size={14} />
           </button>
@@ -354,7 +354,7 @@ export function QueryLab() {
               <button
                 className="btn btn-ghost"
                 onClick={() =>
-                  notify("O layout usa as posições salvas no canvas.")
+                  notify("Organização automática ainda em desenvolvimento!")
                 }
               >
                 Organizar
