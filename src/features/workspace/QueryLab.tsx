@@ -33,6 +33,7 @@ import { ForeignKeyDefinition } from "@/types/database";
 
 const nodeTypes = { table: TableNode };
 const seedDatabase: boolean = false;
+console.log("Seed database:", seedDatabase);
 const initialSql =
   "SELECT\n  c.name AS cliente,\n  COUNT(o.id) AS total_pedidos,\n  ROUND(SUM(o.total), 2) AS valor_total\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY valor_total DESC;";
 const initialEdges: Edge[] = [
@@ -83,6 +84,9 @@ export function QueryLab() {
   const [rowCount, setRowCount] = useState(20);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nodeTypesMap = useMemo(() => nodeTypes, []);
+
+
+//TODO - Mover funções e afins para um hook dedicado, para não poluir o componente principal.
 
   useEffect(() => {
     let active = true;

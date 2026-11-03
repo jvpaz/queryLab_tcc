@@ -12,11 +12,11 @@ function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
       className="table-node"
       style={selected ? { borderColor: "var(--accent)" } : undefined}
     >
-      <Handle
+      {/* <Handle
         type="target"
         position={Position.Left}
         style={{ background: "#78a9ff", border: 0, width: 7, height: 7 }}
-      />
+      /> */}
       <div className="table-heading">
         <span className="table-name">
           <Table2 size={14} className="table-icon" />
@@ -26,6 +26,12 @@ function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
       </div>
       {data.columns.map((column) => (
         <div className="column" key={column.name}>
+          <Handle
+        type="target"
+        position={Position.Left}
+        style={{ background: "#78a9ff", border: 0, width: 7, height: 7 }}
+      />
+          
           <span className="column-left">
             
               {column.primaryKey ? 
@@ -43,14 +49,20 @@ function TableNode({ data, selected }: NodeProps<TableFlowNode>) {
             {column.name}
           </span>
           <span className="column-type">{column.type}</span>
-        </div>
-      ))}
-      <div className="table-footer">{data.columns.length} colunas</div>
-      <Handle
+          <Handle
         type="source"
         position={Position.Right}
         style={{ background: "#78a9ff", border: 0, width: 7, height: 7 }}
       />
+        </div>
+        
+      ))}
+      <div className="table-footer">{data.columns.length} colunas</div>
+        {/* <Handle
+          type="source"
+          position={Position.Right}
+          style={{ background: "#78a9ff", border: 0, width: 7, height: 7 }}
+        /> */}
     </div>
   );
 }
