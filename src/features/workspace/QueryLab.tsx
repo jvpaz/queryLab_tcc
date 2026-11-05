@@ -30,6 +30,7 @@ import { useWorkspaceStore } from "@/store/workspace";
 import { sampleTables, seedSql } from "./sample";
 import TableNode, { type TableFlowNode } from "./TableNode";
 import { ForeignKeyDefinition } from "@/types/database";
+import { handleEdgeConnection } from "./handleEdgeConnection";
 
 const nodeTypes = { table: TableNode };
 const seedDatabase: boolean = false;
@@ -117,7 +118,7 @@ export function QueryLab() {
         setReady(true);
       } catch (error) {
         setQueryError(
-          error instanceof Error ? error.message : "Falha ao iniciar SQLite.",
+          error instanceof Error ? error.message : "Falha ao iniciar PostgreSQL.",
         );
       }
     }
@@ -135,14 +136,19 @@ export function QueryLab() {
   }, []);
 
   const onConnect = useCallback(
-    (connection: Connection) =>
+    (connection: Connection) => {
       setEdges((current) =>
         addEdge(
           { ...connection, type: "smoothstep", style: { stroke: "#596373" } },
           current,
         ),
       ),
-    [setEdges],
+
+
+      handleEdgeConnection(connection) 
+
+    },
+    [setEdges, handleEdgeConnection],
   );
 
   const runQuery = useCallback(async () => {
@@ -192,6 +198,7 @@ export function QueryLab() {
         id: fk.id,
         source: fk.tableOrigin,
         target: fk.table,
+        sourceHandle: fk.to,
         type: "smoothstep",
         style: { stroke: "#596373" },
         labelStyle: { fill: "#a5adba", fontSize: 10 },
@@ -225,14 +232,10 @@ export function QueryLab() {
   const downloadDb = useCallback(async () => {
     try {
       const bytes = await exportDatabase();
-      const url = URL.createObjectURL(
-        new Blob([new Uint8Array(bytes).buffer as ArrayBuffer], {
-          type: "application/x-sqlite3",
-        }),
-      );
+      const url = URL.createObjectURL(bytes);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "querylab.sqlite";
+      link.download = bytes.name || "querylab.sql";
       link.click();
       URL.revokeObjectURL(url);
       notify("Banco exportado.");
@@ -298,7 +301,7 @@ export function QueryLab() {
         <div className="top-actions">
           <span className="status-pill">
             <i className="dot" />
-            {ready ? "SQLite local ativo" : "Iniciando banco…"}
+            {ready ? "PostgreSQL local ativo" : "Iniciando banco…"}
           </span>
           <button className="btn btn-ghost" aria-label="Ajuda">
             <CircleHelp size={15} />
@@ -309,7 +312,7 @@ export function QueryLab() {
           </button>
           <button className="btn btn-primary" onClick={downloadDb}>
             <Download size={14} />
-            Exportar .sqlite
+            Exportar .tar.gz
           </button>
         </div>
       </header>
@@ -351,7 +354,7 @@ export function QueryLab() {
               <Table2 size={15} color="var(--accent)" />
               <h1>Diagrama do banco</h1>
               <span className="muted" style={{ fontSize: 11 }}>
-                {tables.length} tabelas · SQLite
+                {tables.length} tabelas · PostgreSQL
               </span>
             </div>
             <div className="toolbar-group">
@@ -415,7 +418,7 @@ export function QueryLab() {
           <div className="panel-title">
             <span>Editor SQL</span>
             <span className="muted" style={{ fontSize: 10, fontWeight: 400 }}>
-              SQLite · SQL.js
+              PostgreSQL · PGlite
             </span>
           </div>
           <div className="editor-wrap">

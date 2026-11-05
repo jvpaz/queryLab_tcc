@@ -37,6 +37,16 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+input
+{
+  font: inherit;
+  background: transparent;
+  outline: none;
+  border: 0;
+  color: var(--text);
+}
+
 .app-shell {
   height: 100vh;
   min-height: 680px;
@@ -211,11 +221,12 @@ button:disabled {
   background: #1c2027;
   border: 1px solid #383e49;
   border-radius: 9px;
-  overflow: hidden;
   box-shadow: 0 8px 28px #0003;
 }
 .table-heading {
   justify-content: space-between;
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
   padding: 10px 11px;
   background: #242832;
   border-bottom: 1px solid #353b46;
@@ -240,6 +251,7 @@ button:disabled {
   height: 27px;
   padding: 0 11px;
   display: flex;
+  position: relative;
   align-items: center;
   justify-content: space-between;
   font:
