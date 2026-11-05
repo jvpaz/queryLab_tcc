@@ -272,8 +272,8 @@ export function QueryLab() {
       },
       rowCount: 0,
       columns: [
-        { name: "id", type: "INTEGER", primaryKey: true },
-        { name: "nome", type: "TEXT" },
+        { name: "id", type: "integer", primaryKey: true },
+        { name: "nome", type: "text" },
       ],
     };
     void import("@/lib/db/engine").then(({ executeBatch }) =>

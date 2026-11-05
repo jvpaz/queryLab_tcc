@@ -35,7 +35,7 @@ export async function handleEdgeConnection(params: Connection): Promise<boolean>
       return true;
     }
   catch (error) {
-    useWorkspaceStore.getState().setQueryError("Erro ao criar a chave estrangeira, verifique se a coluna de origem e destino possuem o mesmo tipo de dado e são Nullables");
+    useWorkspaceStore.getState().setQueryError("Erro ao criar a chave estrangeira, verifique se a coluna de origem e destino possuem o mesmo tipo de dado e não são nulas.");
     return false;
   }
    
