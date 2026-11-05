@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
       module: { browser: "./src/lib/empty-module.ts" },
     },
   },
-  serverExternalPackages: ["@electric-sql/pglite", "@electric-sql/pglite-tools"],
   
 };
 
