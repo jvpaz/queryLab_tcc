@@ -2,6 +2,9 @@ import { faker } from "@faker-js/faker";
 import { executeBatch } from "@/lib/db/engine";
 import type { TableDefinition } from "@/types/database";
 
+//TODO - Mudança para o pglite quebrou tudo, tem que arrumar
+
+
 const generators: Record<string, () => string | number> = {
   id: () => faker.string.uuid(),
   name: () => faker.person.fullName(),

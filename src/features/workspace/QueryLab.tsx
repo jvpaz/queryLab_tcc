@@ -136,16 +136,18 @@ export function QueryLab() {
   }, []);
 
   const onConnect = useCallback(
-    (connection: Connection) => {
+    async (connection: Connection) => {
+
+
+      const ok = await handleEdgeConnection(connection);
+    if (!ok) return;
+
       setEdges((current) =>
         addEdge(
           { ...connection, type: "smoothstep", style: { stroke: "#596373" } },
           current,
         ),
-      ),
-
-
-      handleEdgeConnection(connection) 
+      )
 
     },
     [setEdges, handleEdgeConnection],
@@ -214,6 +216,8 @@ export function QueryLab() {
     }
   }, [nodes, runStarted, setNodes, setQueryError, setResult, setTables, sql, tables]);
 
+
+  //TODO - PGlite possui salvamento próprio, adaptar para ele depois
   const save = useCallback(async () => {
     try {
       await saveWorkspace({
@@ -295,7 +299,7 @@ export function QueryLab() {
             <Braces size={16} />
           </span>
           <span>
-            querylab<small> / simulator</small>
+            querylab<small> / Simulador</small>
           </span>
         </div>
         <div className="top-actions">
@@ -312,14 +316,14 @@ export function QueryLab() {
           </button>
           <button className="btn btn-primary" onClick={downloadDb}>
             <Download size={14} />
-            Exportar .tar.gz
+            Exportar .sql
           </button>
         </div>
       </header>
       <div className="toolbar">
         <div className="toolbar-group">
           <span className="muted" style={{ fontSize: 10 }}>
-            ● salvo localmente
+            ● Salvo localmente
           </span>
         </div>
         <div className="toolbar-group">
