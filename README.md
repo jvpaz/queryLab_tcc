@@ -1,6 +1,6 @@
 # QueryLab — simulador SQL no navegador
 
-Base para um laboratório de bancos relacionais. O projeto executa PostgreSQL localmente no navegador e organiza a interface por funcionalidades para facilitar a adição de editor avançado, importação de schemas, múltiplos projetos e exercícios.
+Base para um laboratório de bancos relacionais ainda em desenvolvimento.
 
 ## Stack
 
