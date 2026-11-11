@@ -339,6 +339,7 @@ export function QueryLab() {
 
   return (
     <main className="app-shell" onClick={edgeForRelationType ? () => setEdgeForRelationType(null) : undefined} onDrag={edgeForRelationType ? () => setEdgeForRelationType(null) : undefined}>
+      <a className="skip-link" href="#sql-editor">Pular para o editor SQL</a>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">
@@ -422,7 +423,7 @@ export function QueryLab() {
               </button>
             </div>
           </div>
-          <div className="canvas">
+          <div className="canvas" aria-label="Diagrama visual do banco de dados">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -447,7 +448,7 @@ export function QueryLab() {
           </div>
           <div className="schema-panel">
             <div className="schema-header">
-              <span>Estrutura do schema</span>
+              <h2>Estrutura do schema</h2>
               <span className="muted" style={{ fontWeight: 400 }}>
                 {tables.length} tabelas ·{" "}
                 {tables.reduce((n, table) => n + table.columns.length, 0)}{" "}
@@ -455,16 +456,21 @@ export function QueryLab() {
               </span>
             </div>
             <div className="schema-content">
-              <div className="schema-list">
+              {tables.length ? <ul className="schema-list">
                 {tables.map((table) => (
-                  <div className="schema-card" key={table.id}>
-                    <strong>{table.name}</strong>
-                    <span>
-                      {table.columns.map((column) => column.name).join(" · ")}
-                    </span>
-                  </div>
+                  <li className="schema-card" key={table.id}>
+                    <h3>{table.name}</h3>
+                    <ul className="schema-columns">
+                      {table.columns.map((column) => <li key={column.name}>
+                        <span>{column.name}</span><span>{column.type}</span>
+                        {column.primaryKey && <span>chave primária</span>}
+                        {column.foreignKey && <span>chave estrangeira</span>}
+                      </li>)}
+                    </ul>
+                    <span>{table.columns.length} colunas, {table.rowCount ?? 0} linhas</span>
+                  </li>
                 ))}
-              </div>
+              </ul> : <p className="schema-empty">Nenhuma tabela no schema.</p>}
             </div>
           </div>
         </section>
@@ -475,13 +481,14 @@ export function QueryLab() {
               PostgreSQL · PGlite
             </span>
           </div>
-          <div className="editor-wrap">
+          <div className="editor-wrap" id="sql-editor">
             <div className="editor-head">
               <span>query.sql</span>
               <div className="editor-actions">
                 <button
                   className="icon-button"
                   title="Formatar SQL"
+                  aria-label="Formatar SQL"
                   onClick={() => setSql(sql.trim())}
                 >
                   <Braces size={14} />
@@ -489,7 +496,8 @@ export function QueryLab() {
                 <button
                   className="icon-button"
                   title="Gerar dados"
-                  onClick={generate}
+                  aria-label="Gerar dados na primeira tabela"
+                  onClick={() => notify("Gerar dados ainda em desenvolvimento!")}
                 >
                   <WandSparkles size={14} />
                 </button>
@@ -532,9 +540,9 @@ export function QueryLab() {
               </div>
             </div>
           </div>
-          <div className="result-area">
+          <div className="result-area" aria-labelledby="result-heading">
             <div className="result-head">
-              <div className="tab">Resultado</div>
+              <h2 className="tab" id="result-heading">Resultado</h2>
               <span className="result-meta">
                 {result
                   ? `${result.rowCount} linhas · ${result.durationMs} ms`
@@ -547,9 +555,10 @@ export function QueryLab() {
               ) : hasResult ? (
                 <table className="result-table">
                   <thead>
+                    <caption className="sr-only">Resultado da consulta SQL, {result.rowCount} linhas</caption>
                     <tr>
                       {result.columns.map((column) => (
-                        <th key={column}>{column}</th>
+                        <th key={column} scope="col">{column}</th>
                       ))}
                     </tr>
                   </thead>
@@ -582,7 +591,12 @@ export function QueryLab() {
           saveRelationType={saveRelationType}
         />
       }
-      {notice && <div className="toast">{notice}</div>}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {notice || (isRunning ? "Executando consulta SQL." : "")}
+        {result && !isRunning && !queryError ? ` Consulta concluída: ${result.rowCount} linhas retornadas em ${result.durationMs} milissegundos.` : ""}
+      </div>
+      {queryError && <div className="sr-only" role="alert">Erro na consulta SQL: {queryError}</div>}
+      {notice && <div className="toast" aria-hidden="true">{notice}</div>}
     </main>
   );
 }
