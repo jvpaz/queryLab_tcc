@@ -465,7 +465,7 @@ input
 .schema-header h2 { margin: 0; font-size: inherit; font-weight: inherit; }
 .schema-content {
   height: 106px;
-  padding: 8px 15px;
+  padding: 5px 15px;
   overflow: auto;
 }
 .schema-list {
