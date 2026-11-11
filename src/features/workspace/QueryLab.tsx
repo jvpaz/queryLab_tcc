@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import {
   Background,
   Controls,
@@ -23,7 +23,7 @@ import {
   Table2,
   WandSparkles,
 } from "lucide-react";
-import { executeSql, exportDatabase, getDatabase, getForeignKeys, getSchema } from "@/lib/db/engine";
+import { executeBatch, executeSql, exportDatabase, getDatabase, getForeignKeys, getSchema } from "@/lib/db/engine";
 import { generateRows } from "@/lib/data/generate";
 import { saveWorkspace } from "@/lib/storage/workspaces";
 import { useWorkspaceStore } from "@/store/workspace";
@@ -31,8 +31,11 @@ import { sampleTables, seedSql } from "./sample";
 import TableNode, { type TableFlowNode } from "./TableNode";
 import { ForeignKeyDefinition } from "@/types/database";
 import { handleEdgeConnection } from "./handleEdgeConnection";
+import RelationEdge from "./RelationEdge";
+import RelationModal from "./RelationModal";
 
 const nodeTypes = { table: TableNode };
+const edgeTypes = { relation: RelationEdge };
 const seedDatabase: boolean = false;
 console.log("Seed database:", seedDatabase);
 const initialSql =
@@ -81,9 +84,13 @@ export function QueryLab() {
   const [nodes, setNodes, onNodesChange] = useNodesState<TableFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(seedDatabase ? initialEdges : []);
   const [notice, setNotice] = useState("");
+  const [edgeForRelationType, setEdgeForRelationType] = useState<Edge | null>(null);
+  const [relationType, setRelationType] = useState("1:N");
+  const [relationModalPosition, setRelationModalPosition] = useState({ x: 0, y: 0 });
   const [ready, setReady] = useState(false);
   const [rowCount, setRowCount] = useState(20);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const edgeTypesMap = useMemo(() => edgeTypes, []);
   const nodeTypesMap = useMemo(() => nodeTypes, []);
 
 
@@ -95,9 +102,7 @@ export function QueryLab() {
       try {
         await getDatabase();
         if (seedDatabase) {
-          await import("@/lib/db/engine").then(({ executeBatch }) =>
-            executeBatch(seedSql),
-          );
+          await executeBatch(seedSql);
         }
         if (!active) return;
 
@@ -144,7 +149,7 @@ export function QueryLab() {
 
       setEdges((current) =>
         addEdge(
-          { ...connection, type: "smoothstep", style: { stroke: "#596373" } },
+          { ...connection, type: "relation", style: { stroke: "#596373" } },
           current,
         ),
       )
@@ -152,6 +157,28 @@ export function QueryLab() {
     },
     [setEdges, handleEdgeConnection],
   );
+
+  const onEdgeClick = useCallback(
+    (event: ReactMouseEvent, edge: Edge) => {
+      setEdgeForRelationType(edge);
+      setRelationType(String(edge.label ?? "1:N"));
+      setRelationModalPosition({ x: event.clientX, y: event.clientY });
+    },
+    [],
+  );
+
+  const saveRelationType = useCallback((relationType: string) => {
+    if (!edgeForRelationType) return;
+
+    setEdges((current) =>
+      current.map((edge) =>
+        edge.id === edgeForRelationType.id
+          ? { ...edge, label: relationType }
+          : edge,
+      ),
+    );
+    setEdgeForRelationType(null);
+  }, [edgeForRelationType, relationType, setEdges]);
 
   const runQuery = useCallback(async () => {
     if (!sql.trim()) return;
@@ -201,9 +228,7 @@ export function QueryLab() {
         source: fk.tableOrigin,
         target: fk.table,
         sourceHandle: fk.to,
-        type: "smoothstep",
-        style: { stroke: "#596373" },
-        labelStyle: { fill: "#a5adba", fontSize: 10 },
+        type: "relation",
       })));
 
       console.log("Updated Edges:", edges);
@@ -276,10 +301,8 @@ export function QueryLab() {
         { name: "nome", type: "text" },
       ],
     };
-    void import("@/lib/db/engine").then(({ executeBatch }) =>
-      executeBatch(
-        `CREATE TABLE "${name}" (id INTEGER PRIMARY KEY, nome TEXT);`,
-      ),
+    executeBatch(
+      `CREATE TABLE "${name}" (id INTEGER PRIMARY KEY, nome TEXT);`,
     );
     setTables([...tables, table]);
     setNodes((current) => [
@@ -289,10 +312,33 @@ export function QueryLab() {
     notify(`Tabela ${name} adicionada ao diagrama.`);
   }, [notify, setNodes, setTables, tables]);
 
+  const deleteTables = useCallback(
+    (deletedNodes: TableFlowNode[]) => {
+      const deletedIds = new Set(deletedNodes.map((node) => node.id));
+      setTables(tables.filter((table) => !deletedIds.has(table.id)));
+      Promise.all(
+        deletedNodes.map((node) =>
+          executeBatch(
+            `DROP TABLE IF EXISTS "${node.data.name.replaceAll('"', '""')}" CASCADE;`,
+          ),
+        ),
+      ).catch((error) => {
+        console.error("Could not drop deleted table(s):", error);
+        notify("Não foi possível excluir a tabela do banco.");
+      });
+      notify(
+        deletedNodes.length === 1
+          ? `Tabela ${deletedNodes[0].data.name} excluída.`
+          : `${deletedNodes.length} tabelas excluídas.`,
+      );
+    },
+    [notify, setTables, tables],
+  );
+
   const hasResult = !!result && result.columns.length > 0;
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" onClick={edgeForRelationType ? () => setEdgeForRelationType(null) : undefined} onDrag={edgeForRelationType ? () => setEdgeForRelationType(null) : undefined}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">
@@ -381,14 +427,18 @@ export function QueryLab() {
               nodes={nodes}
               edges={edges}
               onNodesChange={onNodesChange}
+              onNodesDelete={deleteTables}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              onEdgeClick={onEdgeClick}
               nodeTypes={nodeTypesMap}
+              edgeTypes={edgeTypesMap}
               fitView
               fitViewOptions={{ padding: 0.2 }}
               minZoom={0.25}
               maxZoom={1.6}
               proOptions={{ hideAttribution: true }}
+              deleteKeyCode="Delete"
             >
               <Background color="#303540" gap={20} size={1} />
               <Controls />
@@ -525,7 +575,15 @@ export function QueryLab() {
           </div>
         </aside>
       </div>
+      {edgeForRelationType && 
+        <RelationModal 
+          relationModalPosition={relationModalPosition}
+          relationType={relationType}
+          saveRelationType={saveRelationType}
+        />
+      }
       {notice && <div className="toast">{notice}</div>}
     </main>
   );
 }
+

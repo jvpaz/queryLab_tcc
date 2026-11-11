@@ -242,9 +242,6 @@ input
   color: var(--accent);
 }
 .table-count {
-  font:
-    10px "DM Mono",
-    monospace;
   color: var(--muted);
 }
 .column {
@@ -284,6 +281,10 @@ input
   padding: 7px 11px;
   border-top: 1px solid #303641;
   color: #838b99;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 10px;
 }
 .panel {
@@ -519,4 +520,36 @@ input
     height: 120px;
     flex-basis: 120px;
   }
+}
+.relation-modal {
+  position: fixed;
+  z-index: 1000;
+  display: grid;
+  gap: 8px;
+  min-width: 190px;
+  padding: 14px;
+  color: var(--text, #e8ebf0);
+  background: #20242c;
+  border: 1px solid #596373;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #0008;
+  transform: translate(-50%, calc(-100% - 8px));
+}
+
+.relation-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.relation-edge
+{
+  position: absolute;
+  pointer-events: none;
+  background: #333;
+  padding: 2px 5px;
+  border-radius: 7px;
+  color: white;
+  font-size: 9px;
 }

@@ -1,9 +1,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { KeyRound, Table2, Link } from "lucide-react";
-import { Connection, Handle, Position, useEdges, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, Position, useEdges, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import type { TableDefinition } from "@/types/database";
-import { handleEdgeConnection } from "./handleEdgeConnection";
-import { NodeMouseHandler } from "@xyflow/react";
 import { handleTableNameChange } from "./handleTableNameChange";
 
 export type TableNodeData = TableDefinition & { selected?: boolean };
@@ -71,7 +69,6 @@ function TableNode({ id, data, selected }: NodeProps<TableFlowNode>) {
             data.name
           )}
         </span>
-        <span className="table-count">{data.rowCount ?? 0} rows</span>
       </div>
       {data.columns.map((column) => {
 
@@ -119,7 +116,11 @@ function TableNode({ id, data, selected }: NodeProps<TableFlowNode>) {
         </div>
         
       )}  )}
-      <div className="table-footer">{data.columns.length} colunas</div>
+      <div className="table-footer">{data.columns.length} colunas
+
+        <span className="table-count">{data.rowCount ?? 0} linhas</span>
+      </div>
+              
         {/* <Handle
           type="source"
           position={Position.Right}
