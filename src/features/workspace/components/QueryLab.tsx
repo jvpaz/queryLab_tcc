@@ -33,6 +33,9 @@ import { ForeignKeyDefinition } from "@/types/database";
 import { handleEdgeConnection } from "../utils/handleEdgeConnection";
 import RelationEdge from "./RelationEdge";
 import RelationModal from "./RelationModal";
+import { useNotice } from "../hooks/useNotice";
+import { useQueryHooks } from "../hooks/useQueryHooks";
+import { useTableUtils } from "../hooks/useTableUtils";
 const nodeTypes = { table: TableNode };
 const edgeTypes = { relation: RelationEdge };
 
@@ -80,20 +83,20 @@ export function QueryLab() {
   const result = useWorkspaceStore((state) => state.result);
   const queryError = useWorkspaceStore((state) => state.queryError);
   const isRunning = useWorkspaceStore((state) => state.isRunning);
-  const runStarted = useWorkspaceStore((state) => state.runStarted);
-  const setResult = useWorkspaceStore((state) => state.setResult);
+
   const setQueryError = useWorkspaceStore((state) => state.setQueryError);
   const [nodes, setNodes, onNodesChange] = useNodesState<TableFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState(seedDatabase ? initialEdges : []);
-  const [notice, setNotice] = useState("");
   const [edgeForRelationType, setEdgeForRelationType] = useState<Edge | null>(null);
   const [relationType, setRelationType] = useState("1:N");
   const [relationModalPosition, setRelationModalPosition] = useState({ x: 0, y: 0 });
   const [ready, setReady] = useState(false);
   const [rowCount, setRowCount] = useState(20);
-  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const edgeTypesMap = useMemo(() => edgeTypes, []);
   const nodeTypesMap = useMemo(() => nodeTypes, []);
+  const { notify, notice, noticeTimer } = useNotice();
+  const { runQuery } = useQueryHooks({ nodes, setNodes, edges, setEdges });
+  const {insertTable, deleteTables, generate} = useTableUtils({tables, setTables, setNodes, notify, rowCount});
 
 
 //TODO - Mover funções e afins para um hook dedicado, para não poluir o componente principal.
@@ -137,11 +140,7 @@ export function QueryLab() {
     };
   }, [setNodes, setQueryError, setSql, setTables]);
 
-  const notify = useCallback((message: string) => {
-    setNotice(message);
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(""), 2400);
-  }, []);
+  
 
   const onConnect = useCallback(
     async (connection: Connection) => {
@@ -185,66 +184,7 @@ export function QueryLab() {
 
 
   // TODO - Função feia da desgraça que faz 1 bilhão de coisas ao mesmo tempo, quebrar ela em funções menores e passar tudo isso pra um hook.
-  const runQuery = useCallback(async () => {
-    if (!sql.trim()) return;
-    runStarted();
-    try {
-      const queryResult = await executeSql(sql);
-      const schema = await getSchema();
-      const previousPositions = new Map(
-        nodes.map((node) => [node.id, node.position]),
-      );
-      const savedTables = new Map(tables.map((table) => [table.id, table]));
-      const updatedTables = schema.map((table) => ({
-        ...table,
-        position:
-          previousPositions.get(table.id) ??
-          savedTables.get(table.id)?.position ??
-          table.position,
-      }));
-
-      setTables(updatedTables);
-      setNodes(
-        updatedTables.map((table) => ({
-          id: table.id,
-          type: "table",
-          position: table.position,
-          data: table,
-        })),
-      );
-
-    /*  const previousForeignKeys = edges.map((edge) => ({
-        id: edge.id,
-        tableOrigin: edge.source,
-        table: edge.target,
-      })); */
-
-      const updatedForeignKeys: ForeignKeyDefinition[] = [];
-      for (const table of updatedTables) {
-        const foreignKeys = await getForeignKeys(table.name);
-
-        updatedForeignKeys.push(...foreignKeys);
-      }
-
-      console.log("Updated Foreign Keys:", updatedForeignKeys);
-
-      setEdges(updatedForeignKeys.map((fk, index) => ({
-        id: fk.id,
-        source: fk.tableOrigin,
-        target: fk.table,
-        sourceHandle: fk.to,
-        type: "relation",
-      })));
-
-      console.log("Updated Edges:", edges);
-
-      setResult(queryResult);
-    } catch (error) {
-      setQueryError(
-        error instanceof Error ? error.message : "Erro ao executar SQL.",
-      );
-    }
-  }, [nodes, runStarted, setNodes, setQueryError, setResult, setTables, sql, tables]);
+  
 
 
   //TODO - PGlite possui salvamento próprio, adaptar para ele depois
@@ -278,67 +218,6 @@ export function QueryLab() {
     }
   }, [notify]);
 
-  const generate = useCallback(async () => {
-    const table = tables[0];
-    if (!table) return;
-    try {
-      await generateRows(table, rowCount);
-      notify(`${rowCount} registros gerados em ${table.name}.`);
-    } catch (error) {
-      notify(
-        error instanceof Error ? error.message : "Falha ao gerar os dados.",
-      );
-    }
-  }, [notify, rowCount, tables]);
-
-  const insertTable = useCallback(() => {
-    const name = `nova_tabela_${tables.length + 1}`;
-    const table = {
-      id: name,
-      name,
-      position: {
-        x: 100 + (tables.length % 3) * 260,
-        y: 80 + Math.floor(tables.length / 3) * 210,
-      },
-      rowCount: 0,
-      columns: [
-        { name: "id", type: "integer", primaryKey: true },
-        { name: "nome", type: "text" },
-      ],
-    };
-    executeBatch(
-      `CREATE TABLE "${name}" (id INTEGER PRIMARY KEY, nome TEXT);`,
-    );
-    setTables([...tables, table]);
-    setNodes((current) => [
-      ...current,
-      { id: table.id, type: "table", position: table.position, data: table },
-    ]);
-    notify(`Tabela ${name} adicionada ao diagrama.`);
-  }, [notify, setNodes, setTables, tables]);
-
-  const deleteTables = useCallback(
-    (deletedNodes: TableFlowNode[]) => {
-      const deletedIds = new Set(deletedNodes.map((node) => node.id));
-      setTables(tables.filter((table) => !deletedIds.has(table.id)));
-      Promise.all(
-        deletedNodes.map((node) =>
-          executeBatch(
-            `DROP TABLE IF EXISTS "${node.data.name.replaceAll('"', '""')}" CASCADE;`,
-          ),
-        ),
-      ).catch((error) => {
-        console.error("Não foi possível excluir a tabela do banco:", error);
-        notify("Não foi possível excluir a tabela do banco.");
-      });
-      notify(
-        deletedNodes.length === 1
-          ? `Tabela ${deletedNodes[0].data.name} excluída.`
-          : `${deletedNodes.length} tabelas excluídas.`,
-      );
-    },
-    [notify, setTables, tables],
-  );
 
   const hasResult = !!result && result.columns.length > 0;
 
@@ -559,8 +438,8 @@ export function QueryLab() {
                 <div className="result-error">{queryError}</div>
               ) : hasResult ? (
                 <table className="result-table">
+                  <caption className="sr-only">Resultado da consulta SQL, {result.rowCount} linhas</caption>
                   <thead>
-                    <caption className="sr-only">Resultado da consulta SQL, {result.rowCount} linhas</caption>
                     <tr>
                       {result.columns.map((column) => (
                         <th key={column} scope="col">{column}</th>
