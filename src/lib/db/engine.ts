@@ -128,6 +128,8 @@ export async function executeBatch(sql: string) {
   await db.exec(sql);
 }
 
+
+
 export async function importDatabase(bytes: Uint8Array) {
   const db = await getDatabase();
   await db.exec(new TextDecoder().decode(bytes));

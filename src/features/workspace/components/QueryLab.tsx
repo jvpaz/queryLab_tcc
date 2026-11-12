@@ -27,15 +27,17 @@ import { executeBatch, executeSql, exportDatabase, getDatabase, getForeignKeys, 
 import { generateRows } from "@/lib/data/generate";
 import { saveWorkspace } from "@/lib/storage/workspaces";
 import { useWorkspaceStore } from "@/store/workspace";
-import { sampleTables, seedSql } from "./sample";
+import { sampleTables, seedSql } from "../sample";
 import TableNode, { type TableFlowNode } from "./TableNode";
 import { ForeignKeyDefinition } from "@/types/database";
-import { handleEdgeConnection } from "./handleEdgeConnection";
+import { handleEdgeConnection } from "../utils/handleEdgeConnection";
 import RelationEdge from "./RelationEdge";
 import RelationModal from "./RelationModal";
-
 const nodeTypes = { table: TableNode };
 const edgeTypes = { relation: RelationEdge };
+
+// TODO - Tirar isso daqui quando tiver tempo
+
 const seedDatabase: boolean = false;
 console.log("Seed database:", seedDatabase);
 const initialSql =
@@ -95,6 +97,7 @@ export function QueryLab() {
 
 
 //TODO - Mover funções e afins para um hook dedicado, para não poluir o componente principal.
+//TODO - Quebrar o componente em subcomponentes no futuro, para não poluir o componente principal.
 
   useEffect(() => {
     let active = true;
@@ -180,6 +183,8 @@ export function QueryLab() {
     setEdgeForRelationType(null);
   }, [edgeForRelationType, relationType, setEdges]);
 
+
+  // TODO - Função feia da desgraça que faz 1 bilhão de coisas ao mesmo tempo, quebrar ela em funções menores e passar tudo isso pra um hook.
   const runQuery = useCallback(async () => {
     if (!sql.trim()) return;
     runStarted();
@@ -208,11 +213,11 @@ export function QueryLab() {
         })),
       );
 
-      const previousForeignKeys = edges.map((edge) => ({
+    /*  const previousForeignKeys = edges.map((edge) => ({
         id: edge.id,
         tableOrigin: edge.source,
         table: edge.target,
-      }));
+      })); */
 
       const updatedForeignKeys: ForeignKeyDefinition[] = [];
       for (const table of updatedTables) {
@@ -323,7 +328,7 @@ export function QueryLab() {
           ),
         ),
       ).catch((error) => {
-        console.error("Could not drop deleted table(s):", error);
+        console.error("Não foi possível excluir a tabela do banco:", error);
         notify("Não foi possível excluir a tabela do banco.");
       });
       notify(

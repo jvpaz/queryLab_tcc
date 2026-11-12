@@ -2,6 +2,8 @@ import { openDB } from "idb";
 import type { DBSchema } from "idb";
 import type { WorkspaceSnapshot } from "@/types/database";
 
+//TODO - Antigo e não utilizado no momento, arrumar depois que as funcionalidades principais estiverem funcionando
+
 interface QueryLabDB extends DBSchema {
   workspaces: { key: string; value: WorkspaceSnapshot; indexes: { "by-updated": number } };
 }

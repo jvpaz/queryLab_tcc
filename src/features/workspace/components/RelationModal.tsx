@@ -1,9 +1,4 @@
-type RelationModalProps = {
-  relationModalPosition: { x: number; y: number };
-  relationType: string;
-  saveRelationType: (type: string) => void;
-};
-
+import { RelationModalProps } from "@/types/props";
 
 export default function RelationModal({ relationModalPosition, relationType, saveRelationType }: RelationModalProps)
 {

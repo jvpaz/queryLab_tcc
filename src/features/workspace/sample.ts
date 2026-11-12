@@ -1,5 +1,7 @@
 import type { TableDefinition } from "@/types/database";
 
+//Banco de dados de exemplo para o ambiente de desenvolvimento, só é utilizado quando seedDatabase em QueryLab.tsx é true.
+
 export const sampleTables: TableDefinition[] = [
   {
     id: "customers",

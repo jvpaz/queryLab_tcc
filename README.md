@@ -1,6 +1,6 @@
 # QueryLab — simulador SQL no navegador
 
-Base para um laboratório de bancos relacionais ainda em desenvolvimento.
+Simulador web de bancos relacionais ainda em desenvolvimento. 
 
 ## Stack
 
@@ -13,7 +13,7 @@ Base para um laboratório de bancos relacionais ainda em desenvolvimento.
 
 ## Começar
 
-Requer Node.js compatível com a versão instalada do Next.js.
+Requer Node.js compatível com a versão instalada do Next.js (16.4.2).
 
 ```bash
 npm install
@@ -22,7 +22,7 @@ npm run dev
 
 ## Organização
 
-Em Mudança...
+Arquitetura utilizada ainda em organização...
 
 ## Scripts
 

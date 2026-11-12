@@ -2,47 +2,18 @@ import { memo, useEffect, useRef, useState } from "react";
 import { KeyRound, Table2, Link } from "lucide-react";
 import { Handle, Position, useEdges, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import type { TableDefinition } from "@/types/database";
-import { handleTableNameChange } from "./handleTableNameChange";
+import { handleTableNameChange } from "../utils/handleTableNameChange";
+import { useEditableName } from "../hooks/useEditableName";
 
 export type TableNodeData = TableDefinition & { selected?: boolean };
 export type TableFlowNode = Node<TableNodeData, "table">;
 
-function TableNode({ id, data, selected }: NodeProps<TableFlowNode>) {
-  const { updateNodeData } = useReactFlow<TableFlowNode>();
+function TableNode({ id, data, selected}: NodeProps<TableFlowNode>) {
+  
+  const { editing, setEditing, name, setName, inputRef, save, cancel } = useEditableName(id, data.name);
   const [editingNode, setEditingNode] = useState(false);
-  const [name, setName] = useState(data.name);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const edges = useEdges();
-
-  // mantém o input sincronizado se o nome mudar por fora
-  //TODO Passar isso tudo para um hook customizado, para não poluir o componente
-  useEffect(() => {
-    if (!editingNode) setName(data.name);
-  }, [data.name, editingNode]);
-
-  useEffect(() => {
-    if (editingNode) inputRef.current?.select();
-  }, [editingNode]);
-
-  const save = () => {
-    const trimmed = name.trim();
-    if (trimmed && trimmed !== data.name) {
-      updateNodeData(id, { name: trimmed });
-      handleTableNameChange(data.name, trimmed).catch((err) => {
-        console.error("Error renaming table:", err);
-        setName(data.name); // revert to old name on error
-      });
-    } else {
-      setName(data.name);
-    }
-    setEditingNode(false);
-  };
-
-  const cancel = () => {
-    setName(data.name);
-    setEditingNode(false);
-  };
 
   return (
     <div

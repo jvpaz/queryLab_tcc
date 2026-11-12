@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { executeBatch } from "@/lib/db/engine";
 import type { TableDefinition } from "@/types/database";
 
-//TODO - Mudança para o pglite quebrou tudo, tem que arrumar
+//TODO - Mudança do sql.js pra o pglite quebrou tudo, tem que arrumar a maioria das coisas, por enquanto nada funciona.
 
 
 const generators: Record<string, () => string | number> = {
