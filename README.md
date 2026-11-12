@@ -19,14 +19,3 @@ Requer Node.js compatível com a versão instalada do Next.js (16.4.2).
 npm install
 npm run dev
 ```
-
-## Organização
-
-Arquitetura utilizada ainda em organização...
-
-## Scripts
-
-- `npm run dev` — desenvolvimento
-- `npm run build` — build de produção
-- `npm start` — servidor de produção
-- `npm run lint` — lint
