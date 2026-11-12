@@ -6,14 +6,14 @@ import { useCallback } from "react";
 import { TableFlowNode } from "../components/TableNode";
 import { Edge } from "@xyflow/react";
 
-type QueryHooksProps = {
+type QueryHookParams = {
     nodes: TableFlowNode[];
     setNodes: (nodes: TableFlowNode[]) => void;
     edges: Edge[];
     setEdges: (edges: Edge[]) => void;
 }
 
-export function useQueryHooks({nodes, setNodes, edges, setEdges}: QueryHooksProps) {
+export function useQueryHooks({nodes, setNodes, edges, setEdges}: QueryHookParams) {
     
   const runStarted = useWorkspaceStore((state) => state.runStarted);
   const setResult = useWorkspaceStore((state) => state.setResult);
@@ -21,6 +21,9 @@ export function useQueryHooks({nodes, setNodes, edges, setEdges}: QueryHooksProp
   const setQueryError = useWorkspaceStore((state) => state.setQueryError);
   const tables = useWorkspaceStore((state) => state.tables);
   const setTables = useWorkspaceStore((state) => state.setTables);
+
+  
+    // TODO - Função feia da desgraça que faz 1 bilhão de coisas ao mesmo tempo, quebrar ela em funções menores.
 
     const runQuery = useCallback(async () => {
         if (!sql.trim()) return;

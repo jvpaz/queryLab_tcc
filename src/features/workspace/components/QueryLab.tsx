@@ -6,9 +6,7 @@ import {
   Controls,
   MiniMap,
   ReactFlow,
-  type Connection,
   type Edge,
-  addEdge,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
@@ -23,19 +21,17 @@ import {
   Table2,
   WandSparkles,
 } from "lucide-react";
-import { executeBatch, executeSql, exportDatabase, getDatabase, getForeignKeys, getSchema } from "@/lib/db/engine";
-import { generateRows } from "@/lib/data/generate";
-import { saveWorkspace } from "@/lib/storage/workspaces";
+import { executeBatch, getDatabase} from "@/lib/db/engine";
 import { useWorkspaceStore } from "@/store/workspace";
 import { sampleTables, seedSql } from "../sample";
 import TableNode, { type TableFlowNode } from "./TableNode";
-import { ForeignKeyDefinition } from "@/types/database";
-import { handleEdgeConnection } from "../utils/handleEdgeConnection";
 import RelationEdge from "./RelationEdge";
 import RelationModal from "./RelationModal";
 import { useNotice } from "../hooks/useNotice";
 import { useQueryHooks } from "../hooks/useQueryHooks";
 import { useTableUtils } from "../hooks/useTableUtils";
+import { useWorkspaceActions } from "../hooks/useWorkspaceActions";
+import { useCanvasActions } from "../hooks/useCanvasActions";
 const nodeTypes = { table: TableNode };
 const edgeTypes = { relation: RelationEdge };
 
@@ -97,6 +93,8 @@ export function QueryLab() {
   const { notify, notice, noticeTimer } = useNotice();
   const { runQuery } = useQueryHooks({ nodes, setNodes, edges, setEdges });
   const {insertTable, deleteTables, generate} = useTableUtils({tables, setTables, setNodes, notify, rowCount});
+  const { downloadDb, save } = useWorkspaceActions({ notify, sql, tables });
+  const { onConnect, onEdgeClick, saveRelationType } = useCanvasActions({ setEdges, setEdgeForRelationType, edgeForRelationType, relationType, setRelationType, setRelationModalPosition });
 
 
 //TODO - Mover funções e afins para um hook dedicado, para não poluir o componente principal.
@@ -140,83 +138,6 @@ export function QueryLab() {
     };
   }, [setNodes, setQueryError, setSql, setTables]);
 
-  
-
-  const onConnect = useCallback(
-    async (connection: Connection) => {
-
-
-      const ok = await handleEdgeConnection(connection);
-    if (!ok) return;
-
-      setEdges((current) =>
-        addEdge(
-          { ...connection, type: "relation", style: { stroke: "#596373" } },
-          current,
-        ),
-      )
-
-    },
-    [setEdges, handleEdgeConnection],
-  );
-
-  const onEdgeClick = useCallback(
-    (event: ReactMouseEvent, edge: Edge) => {
-      setEdgeForRelationType(edge);
-      setRelationType(String(edge.label ?? "1:N"));
-      setRelationModalPosition({ x: event.clientX, y: event.clientY });
-    },
-    [],
-  );
-
-  const saveRelationType = useCallback((relationType: string) => {
-    if (!edgeForRelationType) return;
-
-    setEdges((current) =>
-      current.map((edge) =>
-        edge.id === edgeForRelationType.id
-          ? { ...edge, label: relationType }
-          : edge,
-      ),
-    );
-    setEdgeForRelationType(null);
-  }, [edgeForRelationType, relationType, setEdges]);
-
-
-  // TODO - Função feia da desgraça que faz 1 bilhão de coisas ao mesmo tempo, quebrar ela em funções menores e passar tudo isso pra um hook.
-  
-
-
-  //TODO - PGlite possui salvamento próprio, adaptar para ele depois
-  const save = useCallback(async () => {
-    try {
-      await saveWorkspace({
-        id: "default",
-        name: "Meu workspace",
-        sql,
-        tables,
-        updatedAt: Date.now(),
-      });
-      notify("Salvamento de workspace ainda em desenvolvimento.");
-    } catch {
-      notify("Não foi possível salvar no navegador.");
-    }
-  }, [notify, sql, tables]);
-
-  const downloadDb = useCallback(async () => {
-    try {
-      const bytes = await exportDatabase();
-      const url = URL.createObjectURL(bytes);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = bytes.name || "querylab.sql";
-      link.click();
-      URL.revokeObjectURL(url);
-      notify("Banco exportado.");
-    } catch {
-      notify("Não foi possível exportar o banco.");
-    }
-  }, [notify]);
 
 
   const hasResult = !!result && result.columns.length > 0;
